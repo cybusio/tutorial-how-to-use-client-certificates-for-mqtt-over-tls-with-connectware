@@ -1,4 +1,4 @@
-# How to use Mutual TLS (mTLS) Authentication with MQTT and Cybus Connectware
+# MQTT Mutual TLS Authentication with Cybus Connectware
 
 With a security-first approach to DevOps a company may decide to avoid exchange
 of sensitive information in their network for authentication and authorization.
@@ -14,16 +14,16 @@ View also the guide to install Connectware and [how server certificates can be
 replaced](https://www.cybus.io/learn/installing-the-connectware#changing-ssl-certificates)
 
 For access with MQTT using mTLS 3 steps are required:
-1. Prepare Connectware for mTLS
-2. Create Certificate Signing Requests (CSR) and get signed client certificates
+1. [Prepare Connectware for mTLS](#1-prepare-connectware-for-mtls)
+2. [Create Certificate Signing Requests (CSR) and get signed client certificates](#2-create-certificate-signing-requests-csr-and-get-signed-client-certificates)
    * by using the built-in Cybus Certification Authority (CA). 
-   * by using a custom CA resp. certificate chain
-3. Create a Connectware user with role-based permissions
-4. Assign role-based permissions for the client in Connectware
+   * by using a custom CA certificate chain.
+3. [Create a Connectware user with role-based permissions](#3-create-a-connectware-user-with-role-based-permission)
+4. [Assign role-based permissions for the client in Connectware](#4-assign-role-based-permissions-for-the-client-in-connectware)
 
 ## 1. Prepare Connectware for mTLS
 
-Connectware comes with a default behaviour with supporting username/password credentials,
+Connectware by default offers a username/password authentication scheme,
 allowing unencrypted or encrypted communication with the message broker (ports 1883/8883).
 
 To use mTLS an environment variable has to be configured, which lets the broker change
@@ -44,23 +44,24 @@ Change the `CYBUS_BROKER_USE_MUTUAL_TLS` setting to `yes`:
 CYBUS_BROKER_USE_MUTUAL_TLS=yes
 ```
 
-Second, restart the Connectware docker composition
-(for this update on environment variables a `docker-compose restart` is NOT enough, 
-first `down`, then `up -d` is required).
+Second, completely restart the Connectware docker composition (using `down`/`up`
+instead of `restart`, so that the new value of `CYBUS_BROKER_USE_MUTUAL_TLS` is applied).
 
 The Connectware now expects client certificates when connecting with MQTTS at port 8883.
 
 To finalize the authentication process after a successful client certificate verification
 the Common Name field (CN) of the client certificate is taken as a username.
-This username must match a user in the Connectware auth-server database configured 
-with the grant type "certificate".
+This username must match an existing user in the Connectware 
+configured with the grant type "certificate".
 
 ### Verify basic settings
 
 To test the Connectware with mTLS:
-* use the prepared key-pair for a cybus_client with `CN=admin` stored in the /connectware_certs docker volume,
-* then add the `certificate` grant type to the admin user with the Admin-UI
-* and finally connect with a MQTT client on port 8883 with the CA and the client key-pair
+* use the prepared key-pair for a cybus_client with `CN=admin`
+  stored in the `/connectware_certs` docker volume: `cybus_client.key`and `cybus_client.crt`
+* then add the `certificate` grant type to the `admin` user using the Admin-UI
+* and finally connect with a MQTT client on port 8883 with the CA file (`cybus_ca.crt`)
+  and this client key-pair
 
 ---
 **NOTE**
@@ -278,8 +279,8 @@ The client certificate can then be used as described above.
 
 ## 3. Create a Connectware user with role-based permission
 
-To successfully connect with a client certificate, the Common Name (CN) entry
-is required to match exactly a username in the Connectware auth-server database,
+To successfully connect with a client certificate, the Common Name (CN) entry 
+is required to exactly match an existing username in the Connectware 
 that is configured with grant type `certificate`.
 
 The [User documentation](https://docs.cybus.io/latest/user/users.html#create-a-user-with-permissions)
