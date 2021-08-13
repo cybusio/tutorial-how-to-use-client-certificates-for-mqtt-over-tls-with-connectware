@@ -30,7 +30,7 @@ To use mTLS an environment variable has to be configured, which lets the broker 
 the underlying authentication and authorization process. 
 
 ---
-**NOTE**
+NOTE
 
 TLS communication with the Connectware broker is either with username/password 
 credentials or mTLS using client certificates, not both at the same time.
@@ -64,7 +64,7 @@ To test the Connectware with mTLS:
   and this client key-pair
 
 ---
-**NOTE**
+NOTE
 
 The grant type `certificate` is not assigned to the admin user by default,
 so this has to be configured first.
@@ -251,10 +251,14 @@ corresponding Intermediate CA key-pair eligible to sign certificate requests.
 (for testing use the [example root CA configuration](resources/openssl-root-ca-example.conf)
 to get a new self-signed root CA).
 
-The process then follows the above described steps.
+The process then follows the steps described before.
 
-To let the Connectware accept such client certificate, the internal `cybus_ca.crt`
-file needs to be extended with the customer CA certificate chain:
+To let the Connectware accept such client certificate, the customer CA certificate chain
+just needs to be appended to the internal `cybus_ca.crt` file.
+
+To verify that this is enough to be able to validate client certificate,
+[get the connectware truststore (cybus_ca.crt) from Connectware](tools/get_connectware_truststore.sh)
+and append the custom ca chain (which can consist of multiple certificates):
 
 ```
 cat custom_ca.crt >> cybus_ca.crt 
@@ -268,13 +272,17 @@ openssl verify -CAfile cybus_ca.crt cybus_client.crt custom_client.crt
 This should result in:
 ```
 cybus_client.crt: OK
-anymachine.crt: OK
+custom_client.crt: OK
 ```
 
-After that, use the [deployment script](tools/deploy_multiple_ca_file_to_connectware.sh)
-to update the connectware with the new CA file acting as a custom trust store.
+To add custom ca certificate chains, use the [deployment script](tools/add_ca-chain_to_connectware_truststore.sh)
+with the ca chain file as the first argument.
+This updates the connectware with the new CA file acting as a custom trust store.
 
-The client certificate can then be used as described above.
+The client certificate can then be used as described above without restarting any container.
+
+In order to revoke any client with a certificate signed by this custom ca to stop them
+accessing the Connectware, simply remove the custom root ca from the cybus_ca.crt file.
 
 
 ## 3. Create a Connectware user with role-based permission
